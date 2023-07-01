@@ -1,10 +1,10 @@
 import "./App.css";
-import CharacterCreation from "./CharacterCreation/CharacterCreation";
+import Register from "./Components/Register/Register";
 
 function App() {
   return (
     <div className="App">
-      <CharacterCreation />
+      <Register />
     </div>
   );
 }
