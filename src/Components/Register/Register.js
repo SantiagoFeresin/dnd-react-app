@@ -1,76 +1,104 @@
-import { React, useState, useRef } from "react";
+import { React, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../Context/AuthContext";
+import { Alert, Button, Form } from "react-bootstrap";
+import "./Register.css";
 
 const Register = () => {
-  const [email, setEmail] = useState("");
+  const { signup } = useAuth();
+
+  const [user, setUser] = useState({
+    email: "",
+    password: "",
+  });
+
+  const [error, setError] = useState("");
   const [errors, setErrors] = useState([
-    { text: "Ingrese un Email válido", isError: false },
+    { text: "Enter a valid Email address", isError: false },
     {
-      text: "Password debe contener al menos 6 caracteres, una mayuscula y un numero",
+      text: "Password must contain at least 6 characters, 1 capital and 1 number",
       isError: false,
     },
   ]);
+  const navigate = useNavigate();
 
-  const emailRef = useRef(null);
-  const passwordRef = useRef(null);
-
-  const registerHandler = () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     const newErrors = [...errors];
 
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      emailRef.current.focus();
-      emailRef.current.style.borderColor = "red";
+    setError("");
+    if (!/\S+@\S+\.\S+/.test(user.email)) {
       newErrors[0].isError = true;
       setErrors(newErrors);
     } else {
-      emailRef.current.style.borderColor = "";
       newErrors[0].isError = false;
       setErrors(newErrors);
     }
-
     if (
-      passwordRef.current.value.length < 6 ||
-      !/\p{Lu}/u.test(passwordRef.current.value) ||
-      !/\d/.test(passwordRef.current.value)
+      user.password.length < 6 ||
+      !/\p{Lu}/u.test(user.password) ||
+      !/\d/.test(user.password)
     ) {
-      passwordRef.current.focus();
-      passwordRef.current.style.borderColor = "red";
       newErrors[1].isError = true;
       setErrors(newErrors);
     } else {
-      passwordRef.current.style.borderColor = "";
       newErrors[1].isError = false;
       setErrors(newErrors);
     }
-
-    if (!errors[0].isError && !errors[1].isError) {
-      //correct register and navigate to login
+    if (errors[0].isError || errors[1].isError) {
+      return;
     }
-    return;
+    try {
+      await signup(user.email, user.password);
+      navigate("/");
+    } catch (error) {
+      setError(error.message);
+    }
   };
 
-  const emailChangeHandler = (e) => {
-    setEmail(e.target.value);
-  };
+  const handleChange = ({ target: { value, name } }) =>
+    setUser({ ...user, [name]: value });
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-      }} //Prevents page from reloading when form is submited
-    >
-      <input
-        type="email"
-        placeholder="Email"
-        onChange={emailChangeHandler}
-        ref={emailRef}
-      />
-      {errors[0].isError && <p>{errors[0].text}</p>}
-      <input type="password" placeholder="Password" ref={passwordRef} />
-      {errors[1].isError && <p>{errors[1].text}</p>}
-      <button onClick={registerHandler} type="submit">
-        Register
-      </button>
-    </form>
+    <div>
+      <Form className="registerForm" onSubmit={handleSubmit}>
+        <Form.Group className="mb-3" controlId="formBasicEmail">
+          <Form.Label>Email</Form.Label>
+          <Form.Control
+            type="email"
+            name="email"
+            onChange={handleChange}
+            placeholder="Email"
+          />
+          <Form.Text className="text-muted">
+            We'll never share your email with anyone else.
+          </Form.Text>
+          <Alert variant="danger" show={errors[0].isError}>
+            {errors[0].text}
+          </Alert>
+        </Form.Group>
+        <Form.Group>
+          <Form.Label>Password</Form.Label>
+          <Form.Control
+            type="password"
+            name="password"
+            onChange={handleChange}
+            placeholder="Password"
+          />
+          <Alert className="Alert" show={errors[1].isError} variant="danger">
+            {errors[1].text}
+          </Alert>
+        </Form.Group>
+        <Button type="submit">Register</Button>
+      </Form>
+      <p>
+        Already have an Account?
+        <Link to="/login">Login</Link>
+      </p>
+      <Alert className="Alert" show={error} variant="danger">
+        {error}
+      </Alert>
+    </div>
   );
 };
 
